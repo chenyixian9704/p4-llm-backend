@@ -4,5 +4,8 @@
 # Python 运行产物
 __pycache__/
 
+# Agent 运行时数据（记忆文件是程序跑出来的，不是源代码）
+agent_memory.json
+
 # 安装包
 *.exe

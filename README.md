@@ -19,6 +19,7 @@ P4 的目标是打开这个黑盒，回答三个问题：
 | `first_call.py` | ① 直调智谱 GLM API（key 鉴权 → JSON 请求 → 拆响应）；② 重构为 `ask_ai(question)` 可复用函数；③ 直接运行时带演示 |
 | `server.py` | FastAPI + uvicorn：`POST /chat` 收 `{"question": ...}` → 调 `ask_ai` → 返回 `{"answer": ...}`；自带 `/docs` 交互文档 |
 | `tool_call.py` | tool calling 完整循环：给模型 `get_time` 工具说明书 → 模型点单 → 本地执行 → `role: tool` 喂回 → 自然语言最终回答 |
+| `agent.py` | **完整手搓 Agent**：system prompt + 多工具注册表（TOOL_REGISTRY）+ 记忆持久化（agent_memory.json，resume 续聊）+ 多轮循环护栏（最多 6 轮）。`python agent.py` 交互，`python agent.py --demo` 跑内置多轮+记忆演示 |
 
 ## 踩了什么坑（每条都是真实排障时间）
 
@@ -58,4 +59,6 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple requests python-dotenv f
 python first_call.py        # 函数演示
 uvicorn server:app          # 启动后端 → 浏览器开 http://127.0.0.1:8000/docs
 python tool_call.py         # tool calling 循环演示
+python agent.py --demo      # 完整 Agent：多轮对话 + 工具调用 + 记忆持久化演示
+python agent.py             # 进入交互式 Agent（输入 exit 退出，自动存记忆）
 ```
