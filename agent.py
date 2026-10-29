@@ -39,12 +39,15 @@ def get_time():
 def get_date():
     """返回今天日期（不含时间），格式 YYYY-MM-DD。"""
     return datetime.datetime.now().strftime("%Y-%m-%d")
-
+def hours_after(n):
+    """计算从现在起 n 小时后的具体日期和时间，格式 YYYY-MM-DD HH:MM:SS。"""
+    t = datetime.datetime.now() + datetime.timedelta(hours=n)
+    return t.strftime("%Y-%m-%d %H:%M:%S")
 
 # 注册表：工具名 → (函数, 描述, 参数 schema)
 TOOL_REGISTRY = {
     "get_time": (get_time, "获取当前的日期和时间（精确到秒），用于回答'现在几点'类问题。", {"type": "object", "properties": {}}),
-    "get_date": (get_date, "获取今天的日期（不含时间），用于回答'今天几号'类问题。", {"type": "object", "properties": {}}),
+    "get_date": (get_date, "获取今天的日期（不含时间），用于回答'今天几号'类问题。", {"type": "object", "properties": {}}),"hours_after": (hours_after, "计算从现在起 n 小时后的具体日期和时间。凡涉及'再过几小时/几天是何时'的问题，必须调用此工具，禁止心算。", {"type": "object", "properties": {"n": {"type": "integer", "description": "往未来推的小时数"}}, "required": ["n"]}),
 }
 
 
@@ -90,7 +93,8 @@ class Agent:
             for tc in msg["tool_calls"]:  # 模型点单 → 本地执行 → 喂回
                 name = tc["function"]["name"]
                 fn, _, _ = TOOL_REGISTRY.get(name, (None, None, None))
-                result = fn() if fn else f"未知工具：{name}"
+                args = json.loads(tc["function"]["arguments"])
+                result = fn(**args) if fn else f"未知工具：{name}"
                 print(f"  [模型点单] {name} → 本地执行，结果：{result}")
                 self.messages.append({"role": "tool", "tool_call_id": tc["id"], "content": result})
         return "（已达最大轮数，强制结束）"
