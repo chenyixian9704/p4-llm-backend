@@ -52,6 +52,7 @@ lines = ["# Agent 评测报告（评分底稿）", "",
 for tid, ttype, q in TASKS:
     print(f"\n===== {tid} {ttype}：{q}")
     answer, calls = run_one(q)
+    print(f"  [回答] {answer}") 
     lines += [f"## {tid}（{ttype}）", "",
               f"**题目**：{q}", "",
               f"**工具调用轨迹**：{calls if calls else '（零调用）'}", "",
