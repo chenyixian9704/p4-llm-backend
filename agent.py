@@ -17,6 +17,7 @@ import json
 import datetime
 import requests
 from dotenv import load_dotenv
+from search_test import search_resume as _retrieve_top_chunks
 
 load_dotenv()
 key = os.environ["ZHIPU_API_KEY"]
@@ -44,20 +45,8 @@ def hours_after(n):
     t = datetime.datetime.now() + datetime.timedelta(hours=n)
     return t.strftime("%Y-%m-%d %H:%M:%S")
 def search_resume(question):
-    """在简历知识库中检索与问题最相关的资料段落"""
-    text = open("resume_kb.txt", encoding="utf-8").read()
-    chunks = text.split("## ")[1:]
-    STOP = "的了是在有和与就也都啊吧吗呢把对从被让向往哪些什么怎么多少这那他她它我你您会能可以很过要请帮"
-    clean = "".join(ch for ch in question if ch not in STOP)
-    scores = []
-    for c in chunks:
-        score = 0
-        for ch in clean:
-            if ch in c:
-                score += 1
-        scores.append((score, c))
-    scores.sort(reverse=True)
-    return "\n\n".join(c.strip() for _, c in scores[:2])
+    """检索简历知识库，返回最相关资料段落（纯文本）——评分逻辑单一来源在 search_test.py"""
+    return "\n\n".join(c.strip() for _, c in _retrieve_top_chunks(question))
 # 注册表：工具名 → (函数, 描述, 参数 schema)
 TOOL_REGISTRY = {
     "get_time": (get_time, "获取当前的日期和时间（精确到秒），用于回答'现在几点'类问题。", {"type": "object", "properties": {}}),
