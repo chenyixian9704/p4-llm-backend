@@ -43,11 +43,27 @@ def hours_after(n):
     """计算从现在起 n 小时后的具体日期和时间，格式 YYYY-MM-DD HH:MM:SS。"""
     t = datetime.datetime.now() + datetime.timedelta(hours=n)
     return t.strftime("%Y-%m-%d %H:%M:%S")
-
+def search_resume(question):
+    """在简历知识库中检索与问题最相关的资料段落"""
+    text = open("resume_kb.txt", encoding="utf-8").read()
+    chunks = text.split("## ")[1:]
+    STOP = "的了是在有和与就也都啊吧吗呢把对从被让向往哪些什么怎么多少这那他她它我你您会能可以很过要请帮"
+    clean = "".join(ch for ch in question if ch not in STOP)
+    scores = []
+    for c in chunks:
+        score = 0
+        for ch in clean:
+            if ch in c:
+                score += 1
+        scores.append((score, c))
+    scores.sort(reverse=True)
+    return "\n\n".join(c.strip() for _, c in scores[:2])
 # 注册表：工具名 → (函数, 描述, 参数 schema)
 TOOL_REGISTRY = {
     "get_time": (get_time, "获取当前的日期和时间（精确到秒），用于回答'现在几点'类问题。", {"type": "object", "properties": {}}),
-    "get_date": (get_date, "获取今天的日期（不含时间），用于回答'今天几号'类问题。", {"type": "object", "properties": {}}),"hours_after": (hours_after, "计算从现在起 n 小时后的具体日期和时间。凡涉及'再过几小时/几天是何时'的问题，必须调用此工具，禁止心算。", {"type": "object", "properties": {"n": {"type": "integer", "description": "往未来推的小时数"}}, "required": ["n"]}),
+    "get_date": (get_date, "获取今天的日期（不含时间），用于回答'今天几号'类问题。", {"type": "object", "properties": {}}),
+    "hours_after": (hours_after, "计算从现在起 n 小时后的具体日期和时间。凡涉及'再过几小时/几天是何时'的问题，必须调用此工具，禁止心算。",  {"type": "object", "properties": {"n": {"type": "integer", "description": "往未来推的小时数"}}, "required": ["n"]}),
+    "search_resume": (search_resume, "检索简历主人（陈奕先）的个人知识库，返回相关资料段落。凡是询问简历主人的教育背景、专业技能、项目经历、工作或实习经历、联系方式、交付文档等任何个人信息的问题，都必须先调用此工具获取资料，再依据资料回答；用户提到的任何缩写词或专业术语（如 FDE、RAG、DTY），也必须先调用此工具查证其在简历主人语境中的含义；严禁不调用此工具就凭模型记忆回答。", {"type": "object", "properties": {"question": {"type": "string", "description": "用户的问题原文"}}, "required": ["question"]}),
 }
 
 
