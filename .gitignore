@@ -9,3 +9,6 @@ agent_memory.json
 
 # 安装包
 *.exe
+
+# 虚拟环境
+.venv/
