@@ -1,6 +1,11 @@
+import sqlite3
 from fastapi import FastAPI
 from first_call import ask_ai
-
+def save_chat(question, answer):
+    conn = sqlite3.connect("chats.db")
+    conn.execute("INSERT INTO chats (question, answer) VALUES (?, ?)", (question, answer))
+    conn.commit()
+    conn.close()
 app = FastAPI()
 @app.get("/")
 def home():
@@ -10,4 +15,5 @@ def home():
 def chat(data: dict):
     question = data["question"]
     answer = ask_ai(question)
+    save_chat(question, answer)          # ← 新增：问答落库
     return {"answer": answer}

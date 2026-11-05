@@ -12,3 +12,4 @@ agent_memory.json
 
 # 虚拟环境
 .venv/
+chats.db
