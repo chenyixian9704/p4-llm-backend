@@ -52,7 +52,7 @@ TOOL_REGISTRY = {
     "get_time": (get_time, "获取当前的日期和时间（精确到秒），用于回答'现在几点'类问题。", {"type": "object", "properties": {}}),
     "get_date": (get_date, "获取今天的日期（不含时间），用于回答'今天几号'类问题。", {"type": "object", "properties": {}}),
     "hours_after": (hours_after, "计算从现在起 n 小时后的具体日期和时间。凡涉及'再过几小时/几天是何时'的问题，必须调用此工具，禁止心算。",  {"type": "object", "properties": {"n": {"type": "integer", "description": "往未来推的小时数"}}, "required": ["n"]}),
-    "search_resume": (search_resume, "检索简历主人（陈奕先）的个人知识库，返回相关资料段落。凡是询问简历主人的教育背景、专业技能、项目经历、工作或实习经历、联系方式、交付文档等任何个人信息的问题，都必须先调用此工具获取资料，再依据资料回答；用户提到的任何缩写词或专业术语（如 FDE、RAG、DTY），也必须先调用此工具查证其在简历主人语境中的含义；严禁不调用此工具就凭模型记忆回答。", {"type": "object", "properties": {"question": {"type": "string", "description": "用户的问题原文"}}, "required": ["question"]}),
+    "search_resume": (search_resume, "检索简历主人（陈奕先）的个人知识库，返回相关资料段落。凡是询问简历主人的教育背景、专业技能、项目经历、工作或实习经历、联系方式、交付文档等任何个人信息的问题，都必须先调用此工具获取资料，再依据资料回答；用户提到的任何缩写词或专业术语（如 FDE、RAG、DTY），也必须先调用此工具查证其在简历主人语境中的含义；特别地：凡涉及他手搓的 Agent 的任何细节（工具注册表、记忆持久化、多轮护栏），或为其设计的评测考卷（题目类别、评分、分数从 2.5 到 5.5 的变化过程），也必须调用此工具——这些信息只存在于知识库中，模型自身并不知晓；严禁不调用此工具就凭模型记忆回答。", {"type": "object", "properties": {"question": {"type": "string", "description": "用户的问题原文"}}, "required": ["question"]}),
 }
 
 
