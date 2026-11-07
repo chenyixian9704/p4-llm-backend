@@ -20,6 +20,7 @@ P4 的目标是打开这个黑盒，回答三个问题：
 | `server.py` | FastAPI + uvicorn：`POST /chat` 收 `{"question": ...}` → 调 `ask_ai` → 返回 `{"answer": ...}`；自带 `/docs` 交互文档 |
 | `tool_call.py` | tool calling 完整循环：给模型 `get_time` 工具说明书 → 模型点单 → 本地执行 → `role: tool` 喂回 → 自然语言最终回答 |
 | `agent.py` | **完整手搓 Agent**：system prompt + 多工具注册表（TOOL_REGISTRY）+ 记忆持久化（agent_memory.json，resume 续聊）+ 多轮循环护栏（最多 6 轮）。`python agent.py` 交互，`python agent.py --demo` 跑内置多轮+记忆演示 |
+| `eval_agent.py` + `eval_report.md` + `Agent评测设计笔记.md` | **Agent 评测（补3 · AI 测试岗对口）**：7 题**全纺织行业场景**考卷，四指标评分。历经五卷迭代（2.5 → 4.5 → 6 → 5.5/7：修宪两句/新增 hours_after 硬约束/触发词升级）+ 同卷 A/B 验收（基线 58.5 → 对比卷 68 → 触发词回归 72/80）；定位三大失败家族并追到 system prompt 病根，最终以**向量版语义检索 C1 收官** |
 
 ## 踩了什么坑（每条都是真实排障时间）
 
@@ -50,6 +51,9 @@ key 鉴权（Authorization: Bearer）→ 组装 JSON 请求体（model + message
 
 **Q：前后端怎么交互？**
 现挂自己的接口讲：POST /chat，请求体 {"question": ...}，FastAPI 路由到处理函数，调 GLM 后以 {"answer": ...} 返回，状态码 200。
+
+**Q：怎么评测一个 Agent？和评测一段提示词有什么不同？**
+单轮提示词评测只看"答得对不对"（我在 P3 用 10 题评测集做到 80/80）；多步 Agent 要评三件事——**任务成功率 / 工具调用正确率 / 步数成本**。我在本项目用 7 题**全纺织行业场景**考卷实测（`eval_agent.py`），结果 **2.5/7**：失败集中在"诚实层"（表演式服从 / 空头支票 / 有事实仍交付错），工具层和记忆层反而没问题；**最危险的一条失败恰好是自动检测漏报的**——所以 Agent 评测离不开人工判分。
 
 ## 运行方式
 
