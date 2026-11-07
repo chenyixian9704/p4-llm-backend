@@ -41,6 +41,35 @@ def search_resume(question):
     return hits[:4]                                         # ⑥ 前 4 名（综合题需要多块材料，2 块不够）
 
 
+# ── v3 向量检索（C1 新增）：语义匹配，治"字面零重叠"漏检（如"读书"→教育背景）──
+import requests as _rq
+import json as _json
+
+def _embed(text):
+    key = None
+    for line in open('C:/Users/xt/.secrets/api-keys.md', encoding='utf-8'):
+        if '73b5' in line:
+            m = re.search(r'[A-Za-z0-9.\-_]{28,}', line)
+            if m: key = m.group(0)
+    r = _rq.post('https://open.bigmodel.cn/api/paas/v4/embeddings',
+                 headers={'Authorization': 'Bearer ' + key},
+                 json={'model': 'embedding-3', 'input': text}, timeout=30)
+    return r.json()['data'][0]['embedding']
+
+def _cosine(a, b):
+    dot = sum(x * y for x, y in zip(a, b))
+    na = sum(x * x for x in a) ** 0.5
+    nb = sum(x * x for x in b) ** 0.5
+    return dot / (na * nb)
+
+def search_resume_vector(question):
+    """v3 向量检索：问题→向量→与 resume_vectors.json 算余弦→最相关 2 块。接口与 search_resume 一致"""
+    kb = _json.load(open("resume_vectors.json", encoding="utf-8"))
+    qv = _embed(question)
+    scored = [(_cosine(qv, it["vector"]), it["text"]) for it in kb]
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return scored[:2]
+
 if __name__ == "__main__":          # 只有直接运行本文件才跑验收三连；被 import 时保持安静
     for q in ["他会 Docker 吗", "他在哪个公司实习过", "他的评测考卷有几道题"]:
         print("问：", q)
