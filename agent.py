@@ -15,6 +15,7 @@ import os
 import sys
 import json
 import datetime
+import sqlite3
 import requests
 from dotenv import load_dotenv
 from search_test import search_resume as _retrieve_top_chunks, search_resume_vector as _retrieve_top_chunks_vector
@@ -105,18 +106,30 @@ class Agent:
                 self.messages.append({"role": "tool", "tool_call_id": tc["id"], "content": result})
         return "（已达最大轮数，强制结束）"
 
-    # ── 记忆持久化：把对话历史存盘，下次 resume 能接着聊 ──
-    def save_memory(self, path="agent_memory.json"):
-        history = [m for m in self.messages if m["role"] != "system"]  # 不存 system，避免重复堆叠
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(history, f, ensure_ascii=False, indent=2)
-        print(f"  [记忆] 已保存 {len(history)} 条对话到 {path}")
+    # ── 记忆持久化：SQLite 版（接口不变，存储引擎从 JSON 换成数据库）──
+    def save_memory(self, path="chats.db"):
+        conn = sqlite3.connect(path)
+        conn.execute("""CREATE TABLE IF NOT EXISTS memory (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            role TEXT NOT NULL,
+            content TEXT NOT NULL,
+            created_at TEXT DEFAULT (datetime('now','localtime'))
+        )""")
+        conn.execute("DELETE FROM memory")              # 整表替换：对齐旧 JSON 的"覆盖"语义
+        for m in self.messages:
+            if m["role"] == "system":
+                continue                                # 不存 system，避免重复堆叠
+            conn.execute("INSERT INTO memory (role, content) VALUES (?, ?)",
+                         (m.get("role", "assistant"), m.get("content", "")))
+                  
+        conn.close()
+        print(f"  [记忆] 已保存 {len(self.messages) - 1} 条对话到 {path}")
 
-    def _load_memory(self, path="agent_memory.json"):
-        if not os.path.exists(path):
-            return []
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
+    def _load_memory(self, path="chats.db"):
+        conn = sqlite3.connect(path)
+        rows = conn.execute("SELECT role, content FROM memory ORDER BY id").fetchall()
+        conn.close()
+        return [{"role": r, "content": c} for r, c in rows]
 
 
 def demo():
