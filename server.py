@@ -1,7 +1,10 @@
 import sqlite3
+
 from pydantic import BaseModel, ValidationError
 from fastapi import FastAPI
+from first_stream import stream_answer
 from first_call import ask_ai, ask_ai_structured
+from fastapi.responses import StreamingResponse
 
 
 class ChatRequest(BaseModel):
@@ -41,3 +44,6 @@ def chat(data: ChatRequest):
         answer, confidence = ask_ai(question), "n/a"
     save_chat(question, answer)
     return {"answer": answer, "source": "glm-4-flash", "confidence": confidence}
+@app.get("/chat/stream")
+def chat_stream(question: str):
+    return StreamingResponse(stream_answer(question), media_type="text/plain; charset=utf-8")
