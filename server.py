@@ -3,7 +3,7 @@ import sqlite3
 from pydantic import BaseModel, ValidationError
 from fastapi import FastAPI
 from first_stream import stream_answer
-from first_call import ask_ai, ask_ai_structured
+from first_call import ask_ai, ask_ai_structured, _call_llm
 from fastapi.responses import StreamingResponse
 
 
@@ -47,3 +47,19 @@ def chat(data: ChatRequest):
 @app.get("/chat/stream")
 def chat_stream(question: str):
     return StreamingResponse(stream_answer(question), media_type="text/plain; charset=utf-8")
+
+class MemoryRequest(BaseModel):
+    question: str
+    session_id: str = "default"
+
+memory_store = {}   # C5：{会话id: 历史消息列表}——服务器内存里的"记事本"
+
+@app.post("/chat/memory")
+def chat_memory(data: MemoryRequest):
+    history = memory_store.get(data.session_id, [])                    # ① 取这个会话的旧记忆（新会话=空列表）
+    messages = history + [{"role": "user", "content": data.question}]  # ② 旧记忆 + 本次问题
+    answer = _call_llm(messages[-10:])                                 # ③ 只发最近10条：窗口截断，防记忆无限胖
+    memory_store[data.session_id] = messages + [                       # ④ 本轮对话（问+答）存回记事本
+        {"role": "assistant", "content": answer},
+    ]
+    return {"answer": answer, "turns": len(memory_store[data.session_id]) // 2}
