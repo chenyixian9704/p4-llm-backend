@@ -12,14 +12,21 @@ v2 迭代记录（2026-10-31，检索预演考卷驱动，共 5 处）：
   ⑤ 同义词改写换时序：先剥停用词、再改写"技术→技能"。
      顺序反了的话，改写进来的"能"会被停用词剥掉，改写等于白做
 """
+import os
 import re
+from dotenv import load_dotenv
+
+load_dotenv()
 
 STOPWORDS = "的了是在有和与就也都啊吧吗呢把对从被让向往哪些什么怎么多少这那他她它我你您会能可以很过要请帮"
 SYNONYMS = {"技术": "技能"}          # 查询改写：题目用词 → 语料用词
 
+KB_FILE = "resume_kb.txt"            # 语料文件（C9：评测时可指向注入测试副本）
+VEC_FILE = "resume_vectors.json"     # 向量库文件（C9：评测时可指向测试向量库）
+
 
 def search_resume(question):
-    text = open("resume_kb.txt", encoding="utf-8").read()   # ① 读语料
+    text = open(KB_FILE, encoding="utf-8").read()   # ① 读语料
     chunks = text.split("## ")[1:]                          # ② 切块
 
     # ⓪ 拆检索单元：英文单词=1 个单元、汉字=1 个单元；空格/标点直接丢弃
@@ -46,14 +53,11 @@ import requests as _rq
 import json as _json
 
 def _embed(text):
-    key = None
-    for line in open('C:/Users/xt/.secrets/api-keys.md', encoding='utf-8'):
-        if '73b5' in line:
-            m = re.search(r'[A-Za-z0-9.\-_]{28,}', line)
-            if m: key = m.group(0)
+    """向量化：key 统一从 .env 读（ZHIPU_API_KEY），与项目其他脚本一致；不再依赖密钥索引文件"""
     r = _rq.post('https://open.bigmodel.cn/api/paas/v4/embeddings',
-                 headers={'Authorization': 'Bearer ' + key},
+                 headers={'Authorization': 'Bearer ' + os.environ["ZHIPU_API_KEY"]},
                  json={'model': 'embedding-3', 'input': text}, timeout=30)
+    r.raise_for_status()
     return r.json()['data'][0]['embedding']
 
 def _cosine(a, b):
@@ -64,7 +68,7 @@ def _cosine(a, b):
 
 def search_resume_vector(question):
     """v3 向量检索：问题→向量→与 resume_vectors.json 算余弦→最相关 2 块。接口与 search_resume 一致"""
-    kb = _json.load(open("resume_vectors.json", encoding="utf-8"))
+    kb = _json.load(open(VEC_FILE, encoding="utf-8"))
     qv = _embed(question)
     scored = [(_cosine(qv, it["vector"]), it["text"]) for it in kb]
     scored.sort(key=lambda x: x[0], reverse=True)
