@@ -66,6 +66,9 @@ def build_tools_json():
     return out
 
 
+USAGE_LOG = []   # C9 指标四：每次 API 调用的 token 用量留痕（prompt/completion/total）
+
+
 def ask_ai(messages, tools):
     """调智谱 GLM：messages 是完整对话历史，tools 是工具说明书。"""
     body = {"model": "glm-4-flash", "messages": messages}
@@ -77,7 +80,9 @@ def ask_ai(messages, tools):
         json=body,
     )
     resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]
+    data = resp.json()
+    USAGE_LOG.append(data.get("usage", {}))   # C9 指标四：token 留痕
+    return data["choices"][0]["message"]
 
 
 class Agent:
