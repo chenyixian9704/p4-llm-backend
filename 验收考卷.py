@@ -37,5 +37,5 @@ for qid, qtype, q in QUESTIONS:
     lines.append(f"**人工判分（0-8）**：____")
     lines.append("")
 
-open("验收报告-第三卷-触发词升级回归考.md", "w", encoding="utf-8").write("\n".join(lines))
-print("考卷跑完：验收报告-第三卷-触发词升级回归考.md 已生成（待人工判分）")
+open(f"验收报告-回归考-{datetime.now():%Y%m%d-%H%M}.md", "w", encoding="utf-8").write("\n".join(lines))
+print(f"考卷跑完：验收报告-回归考-{datetime.now():%Y%m%d-%H%M}.md 已生成（待人工判分）")
